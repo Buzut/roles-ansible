@@ -1,0 +1,45 @@
+---
+- name: Add latest apache repo
+  apt_repository:
+    repo: 'ppa:ondrej/apache2'
+
+- name: Install apache
+  apt:
+    name: apache2
+    update_cache: yes
+
+- name: Disable other_vhost
+  command: a2disconf other-vhosts-access-log
+
+- name: Remove other_vhosts_access.log file
+  file:
+    path: /var/log/apache2/other_vhosts_access.log
+    state: absent
+
+- name: Set ServerToken & ServerSignature for prod
+  replace:
+    dest: /etc/apache2/conf-available/security.conf
+    regexp: "{{ item.regexp }}"
+    replace: "{{ item.replace }}"
+  with_items:
+    - { regexp: 'ServerTokens OS', replace: 'ServerTokens Prod' }
+    - { regexp: 'ServerSignature On', replace: 'ServerSignature Off' }
+
+- name: Remove default VirtualHost
+  file:
+    path: /etc/apache2/sites-enabled/000-default.conf
+    state: absent
+  when: withVhost
+
+- name: Add VirtualHost
+  template:
+    src: "{{ vhostName }}.conf"
+    dest: /etc/apache2/sites-available/{{ vhostName }}.conf
+  when: withVhost
+
+- name: Enable VirtualHost
+  file:
+    src: "{{ vhostName }}.conf"
+    dest: /etc/apache2/sites-enabled/{{ vhostName }}.conf
+    state: link
+  when: withVhost

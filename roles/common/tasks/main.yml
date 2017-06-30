@@ -1,0 +1,111 @@
+---
+- name: Update & upgrade
+  apt:
+    update_cache: yes
+    upgrade: dist
+
+- name: Generate password
+  command: openssl rand -base64 32
+  register: randomPass
+
+- name: Change root passwd
+  shell: echo "root:{{ randomPass }}" | chpasswd
+
+- name: Install base soft (transport-https, curl, fail2ban, dnsutils)
+  apt:
+    name: "{{ item }}"
+  with_items:
+    - apt-transport-https
+    - software-properties-common
+    - fail2ban
+    - exim4
+    - htop
+    - glances
+    - iotop
+
+- name: Install Unattended-Upgrade
+  apt:
+    name: unattended-upgrades
+
+- name: Configure unattended-upgrades
+  replace:
+    dest: /etc/apt/apt.conf.d/50unattended-upgrades
+    regexp: "{{ item.regexp }}"
+    replace: "{{ item.replace }}"
+  with_items:
+    - { regexp: '//Unattended-Upgrade::Mail "root";', replace: 'Unattended-Upgrade::Mail "{{ email }}";' }
+    - { regexp: '//Unattended-Upgrade::MailOnlyOnError "true";', replace: 'Unattended-Upgrade::MailOnlyOnError "true";' }
+    - { regexp: '//Unattended-Upgrade::Remove-Unused-Dependencies "false";', replace: 'Unattended-Upgrade::Remove-Unused-Dependencies "true";' }
+
+- name: Enable unattended-upgrades
+  copy:
+    src: 20auto-upgrades
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+
+- name: Upload ssh server config file
+  copy:
+    src: sshServerConfig
+    dest: /etc/ssh/sshd_config
+    mode: 0644
+
+- name: Install iptables.sh
+  copy:
+    src: iptables.sh
+    dest: /usr/local/sbin/iptables.sh
+    mode: 0744
+
+- name: Make iptable start on boot
+  copy:
+    src: rc.local
+    dest: /etc/rc.local
+    mode: 0755
+
+- name: Upload fail2ban config file
+  copy:
+    src: fail2ban.conf
+    dest: /etc/fail2ban/jail.d/defaults-debian.conf
+    mode: 0644
+
+- name: Configure /etc/aliases
+  lineinfile:
+    dest: /etc/aliases
+    regexp: ^root:.*
+    line: "root: {{ email }}"
+
+- name: Configure exim4
+  replace:
+    dest: /etc/exim4/update-exim4.conf.conf
+    regexp: "dc_eximconfig_configtype='local'"
+    replace: "dc_eximconfig_configtype='internet'"
+
+- name: Check if mdadm conf file exists
+  stat:
+    path: /etc/mdadm/mdadm.conf
+  register: mdadm
+
+- name: Set notif email for mdadm alerts
+  replace:
+    dest: /etc/mdadm/mdadm.conf
+    regexp: "MAILADDR root"
+    replace: "MAILADDR {{ email }}"
+  when: mdadm.stat.islnk is defined
+
+- name: Remove useless info on ssh login
+  file:
+    path: /etc/update-motd.d/{{ item }}
+    state: absent
+  with_items:
+    - 10-help-text
+    - 50-landscape-sysinfo
+    - 51-cloudguest
+    - 90-updates-available
+
+- name: Remove useless stuff
+  apt:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - bind9
+    - telnet
+    - at
+    - ftp

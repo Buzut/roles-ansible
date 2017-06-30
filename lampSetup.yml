@@ -1,0 +1,15 @@
+---
+- hosts: webserver
+  roles:
+     - common
+     - lampserver
+
+  # l'email est utilisé dans common et letsencrypt
+  # je le renseigne de manière globale plutôt qu'individuellement dans chaque role
+  vars:
+    email: my@mail.fr
+
+  # ici, on demande directement à l'exécution de renseigner une variable
+  vars_prompt:
+    - name: "mysqlRootPass"
+      prompt: "password for MySQL root"

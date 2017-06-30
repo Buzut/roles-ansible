@@ -1,0 +1,33 @@
+---
+- name: Add Certbot ppa
+  apt_repository:
+    repo: 'ppa:certbot/certbot'
+
+- name: Install letsencrypt
+  apt:
+    name: certbot
+
+- name: Install certs
+  command: certbot certonly --standalone --agree-tos --rsa-key-size 4096 --non-interactive -d {{ item.value.address }} --email {{ email }}
+  with_dict: "{{ domains }}"
+  when: withCerts
+
+- name: Install renew script
+  template:
+    src: renewLetsEncrypt.sh
+    dest: /usr/local/sbin/renewLetsEncrypt.sh
+    mode: 0700
+
+- name: Install renewLetsencrypt crontab
+  cron:
+    name: "renew tls certs"
+    job: "/usr/local/sbin/renewLetsEncrypt.sh >/dev/null 2>&1"
+    minute: 22
+    hour: 4
+    day: 5
+    month: "*"
+
+- name: Upload logrotate conf for LE
+  copy:
+    src: logRotate
+    dest: /etc/logrotate.d/letsencrypt

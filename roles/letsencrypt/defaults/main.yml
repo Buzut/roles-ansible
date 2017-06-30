@@ -1,0 +1,8 @@
+---
+webserverType: apache2
+withCerts: false
+
+# fake dict to avoid complaint from letsencrypt Install certs
+domains:
+  bullshit:
+    address: "fake.domain.boobs"

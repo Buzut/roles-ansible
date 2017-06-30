@@ -1,0 +1,9 @@
+/var/log/letsencrypt/*.log {
+    daily
+    rotate 90
+    compress
+    delaycompress
+    notifempty
+    missingok
+    create 640 root adm
+}

@@ -1,0 +1,21 @@
+---
+- name: Define maria root password
+  shell: "{{ item }}"
+  with_items:
+    - "echo mysql-server mysql-server/root_password password {{ mysqlRootPass }} | debconf-set-selections"
+    - "echo mysql-server mysql-server/root_password_again password {{ mysqlRootPass }} | debconf-set-selections"
+
+- name: Install software-properties-common
+  apt:
+    name: software-properties-common
+
+- name: Add repo key
+  command: apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xF1656F24C74CD1D8
+
+- name: Install Maria repo
+  apt_repository:
+    repo: 'deb [arch=amd64,i386,ppc64el] http://ftp.igh.cnrs.fr/pub/mariadb/repo/10.1/ubuntu xenial main'
+
+- name: Install MariaDB
+  apt:
+    name: mariadb-server
