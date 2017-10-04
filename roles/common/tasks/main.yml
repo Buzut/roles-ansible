@@ -61,7 +61,7 @@
     mode: 0755
 
 - name: Upload fail2ban config file
-  copy:
+  template:
     src: fail2ban.conf
     dest: /etc/fail2ban/jail.d/defaults-debian.conf
     mode: 0644
