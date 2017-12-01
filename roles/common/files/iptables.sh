@@ -24,10 +24,10 @@ ip6tables -P OUTPUT DROP
 
 # INPUT
 # DOESN'T BREAK ESTABLISHED CONNECTIONS
-iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A INPUT -m conntrack --ctstate -j ACCEPT
 
 # v6
-ip6tables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+ip6tables -A INPUT -m conntrack --ctstate -j ACCEPT
 
 #######################################################################
 
@@ -50,10 +50,10 @@ ip6tables -A  OUTPUT -o lo -j ACCEPT
 
 # OUTPUT
 # DOESN'T BREAK ESTABLISHED CONNECTIONS
-iptables -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED -j ACCEPT
 
 # v6
-ip6tables -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+ip6tables -A OUTPUT -m conntrack --ctstate ESTABLISHED -j ACCEPT
 
 #######################################################################
 
